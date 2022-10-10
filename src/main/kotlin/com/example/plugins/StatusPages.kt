@@ -9,7 +9,7 @@ fun Application.configureStatusPages() {
     install(StatusPages) {
         status(HttpStatusCode.NotFound) { call, _ ->
             call.respond(
-                message = "Baby What are you looking for?",
+                message = "Looking For Something?",
                 status = HttpStatusCode.NotFound
             )
 
