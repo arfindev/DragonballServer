@@ -1,22 +1,17 @@
 package com.example
 
 import com.example.model.ApiResponse
-import com.example.repository.HeroRepository
 import com.example.repository.HeroRepositoryImpl
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.testing.*
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import org.koin.java.KoinJavaComponent.inject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ApplicationTest {
-    private val heroRepository: HeroRepository by inject(HeroRepository::class.java)
 
     @Test
     fun `access endpoint, checking if the status is ok or not`() = testApplication {
@@ -56,6 +51,67 @@ class ApplicationTest {
             assertEquals(expected = expected, actual = actual)
         }
     }
+
+
+    @Test
+    fun `access search heroes endpoint, query hero names, assert single hero result`() =
+        testApplication {
+            val response = client.get("/dragonball/heroes/search?name=vegeta")
+            assertEquals(
+                expected = HttpStatusCode.OK,
+                actual = response.status
+            )
+            val actual = Json.decodeFromString<ApiResponse>(response.bodyAsText()).heroes.size
+            assertEquals(expected = 1, actual = actual)
+        }
+
+
+    @Test
+    fun `access search heroes endpoint, query hero names, assert multiple hero result`() =
+        testApplication {
+            val response = client.get("/dragonball/heroes/search?name=kkarot")
+            assertEquals(
+                expected = HttpStatusCode.OK,
+                actual = response.status
+            )
+            val actual = Json.decodeFromString<ApiResponse>(response.bodyAsText()).heroes.size
+            assertEquals(expected = 3, actual = actual)
+        }
+
+    @Test
+    fun `access search heroes endpoint, query an empty text, assert empty list result`() =
+        testApplication {
+            val response = client.get("/dragonball/heroes/search?name=")
+            assertEquals(
+                expected = HttpStatusCode.OK,
+                actual = response.status
+            )
+            val actual = Json.decodeFromString<ApiResponse>(response.bodyAsText()).heroes
+            assertEquals(expected = emptyList(), actual = actual)
+        }
+
+    @Test
+    fun `access search heroes endpoint, query not existing hero, assert emptylist`() =
+        testApplication {
+            val response = client.get("/dragonball/heroes/search?name=unknown")
+            assertEquals(
+                expected = HttpStatusCode.OK,
+                actual = response.status
+            )
+            val actual = Json.decodeFromString<ApiResponse>(response.bodyAsText()).heroes
+            assertEquals(expected = emptyList(), actual = actual)
+        }
+
+    @Test
+    fun `access search heroes endpoint, assert not found`() =
+        testApplication {
+            val response = client.get("/unknown")
+            assertEquals(
+                expected = HttpStatusCode.NotFound,
+                actual = response.status
+            )
+            assertEquals(expected = "Looking For Something?", actual = response.bodyAsText())
+        }
 
 
     fun calculatePage(page: Int): Map<String, Int?> {
